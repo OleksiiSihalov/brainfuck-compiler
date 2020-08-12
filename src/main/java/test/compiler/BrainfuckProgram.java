@@ -10,7 +10,7 @@ public class BrainfuckProgram {
 
     private final Memory memory;
     private final StringBuilder output = new StringBuilder();
-    private final List<Command> commands = new ArrayList<>();
+    private final List<Command> commandQueue = new ArrayList<>();
 
     public BrainfuckProgram(Memory memory, String input) {
         this.memory = memory;
@@ -21,28 +21,29 @@ public class BrainfuckProgram {
         char[] charInput = input.toCharArray();
         Stack<Loop> loopStack = new Stack<>();
         for (char c : charInput) {
+            Command command = null;
             switch (c) {
                 case '>':
-                    addCommand(new PointerMover(memory, +1), loopStack);
+                    command = new PointerMover(memory, +1);
                     break;
                 case '<':
-                    addCommand(new PointerMover(memory, -1), loopStack);
+                    command = new PointerMover(memory, -1);
                     break;
                 case '+':
-                    addCommand(new ValueChanger(memory, +1), loopStack);
+                    command = new ValueChanger(memory, +1);
                     break;
                 case '-':
-                    addCommand(new ValueChanger(memory, -1), loopStack);
+                    command = new ValueChanger(memory, -1);
                     break;
                 case '.':
-                    addCommand(new Printer(memory, output), loopStack);
+                    command = new Printer(memory, output);
                     break;
                 case '[':
-                    addCommand(new Loop(memory), loopStack);
+                    command = new Loop(memory);
                     break;
                 case ']':
                     if (loopStack.empty()) {
-                        throw new IllegalArgumentException ("'[' expected");
+                        throw new IllegalArgumentException("'[' expected");
                     }
                     loopStack.pop();
                     break;
@@ -52,24 +53,17 @@ public class BrainfuckProgram {
                     }
                     throw new UnsupportedOperationException("Unsupported operation '" + c + "' index: " + input.indexOf(c));
             }
+            if (command != null) {
+                command.addCommandToQueue(commandQueue, loopStack);
+            }
         }
         if (!loopStack.empty()) {
-            throw new IllegalArgumentException ("']' expected");
+            throw new IllegalArgumentException("']' expected");
         }
-    }
-
-    private void addCommand(Command command, Stack<Loop> loopStack) {
-        if (loopStack.empty()) {
-            commands.add(command);
-        } else {
-            loopStack.peek().addCommand(command);
-        }
-        if (command instanceof Loop)
-            loopStack.push((Loop) command);
     }
 
     public String interpret() {
-        for (Command command : commands) {
+        for (Command command : commandQueue) {
             command.execute();
         }
         return output.toString();

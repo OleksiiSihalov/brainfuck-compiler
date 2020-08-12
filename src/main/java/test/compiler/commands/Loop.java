@@ -4,6 +4,7 @@ import test.compiler.Memory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class Loop implements Command {
 
@@ -14,7 +15,16 @@ public class Loop implements Command {
         this.memory = memory;
     }
 
-    public void addCommand(Command command) {
+    public void addCommandToQueue(List<Command> queue, Stack<Loop> loopStack) {
+        if (loopStack.empty()) {
+            queue.add(this);
+        } else {
+            loopStack.peek().addCommandToLoop(this);
+        }
+        loopStack.push(this);
+    }
+
+    public void addCommandToLoop(Command command) {
         commands.add(command);
     }
 
